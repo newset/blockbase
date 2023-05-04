@@ -4,3 +4,7 @@ version = "0.0.1"
 
 [dependencies]
 web3 = "0.18.0"
+
+[lib]
+name = "web3base"
+crate-type = ["staticlib", "cdylib"]
