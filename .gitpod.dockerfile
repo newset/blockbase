@@ -22,6 +22,7 @@ RUN install-packages openjdk-8-jdk -y \
 #     && chmod +x "$_gc_path" 
 
 # Insall flutter and dependencies
+RUN brew tap dart-lang/dart && brew install dart
 USER gitpod
 RUN wget -q "https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_${FLUTTER_VERSION}.tar.xz" -O - \
     | tar xpJ -C "$HOME" \
