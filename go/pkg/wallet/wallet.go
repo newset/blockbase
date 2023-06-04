@@ -1,25 +1,19 @@
 package wallet
 
 import (
+	"crypto/ecdsa"
 	"math/big"
 )
 
-// wallet struct
-type Wallet struct {
-	// 钱包ID
-	Id int
-	// 助记词
-	Mnemonic string
-	// 私钥
-	PrivateKey string
-	// 公钥
-	PublicKey string
-	// 地址
-	Address string
-	// 密码
-	Password string
-	// 余额
-	Balance *big.Int
+type Account struct {
+	privatekey *ecdsa.PrivateKey
+
+	Mnemonic   string
+	Privatekey string
+	Password   string
+	Name       string
+	Address    string
+	Balance    *big.Int
 }
 
 type Token struct {
@@ -27,9 +21,11 @@ type Token struct {
 	// 地址
 	Address string
 
-	decimals int
+	Decimals int
 
 	Balance *big.Int
+
+	Account int
 }
 
 type NFT struct {
@@ -42,4 +38,6 @@ type NFT struct {
 	Url string
 
 	Standard string
+
+	Account int
 }
