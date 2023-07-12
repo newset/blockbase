@@ -1,10 +1,18 @@
 package main
 
+// #include <stdio.h>
+// #include <errno.h>
+import "C"
 import (
-	tron "blockbase/pkg/tron"
+	"go-demo/core/trx"
 )
 
+//export SignTron
+func SignTron(message *C.char, privateKey *C.char) *C.char {
+	sig := trx.SignString(C.GoString(message), C.GoString(privateKey))
+	return C.CString(sig)
+}
+
 func main() {
-	account, _ := tron.CreateNewTronAccount()
-	println("addres: ", account)
+
 }
