@@ -1,7 +1,0 @@
-[package]
-name = "tronbase"
-version = "0.0.1"
-
-[lib]
-name = "tronbase"
-crate-type = ["staticlib", "cdylib"]

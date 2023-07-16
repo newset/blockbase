@@ -1,0 +1,18 @@
+[package]
+name = "wallet-base"
+version = "0.1.0"
+authors = ["Brick Pop <itsbrickpop@gmail.com>"]
+edition = "2018"
+
+[lib]
+name = "wallet_base"
+crate-type = ["staticlib", "cdylib"]
+
+[dependencies]
+anychain-tron = "0.1.1"
+# ethers = { version = "2.0", features = ["rustls"] }
+# web3 = { version = "0.18.0", default-features = false, features = ["http-rustls-tls", "signing", ""] }
+
+# futures
+# futures-util = { workspace = true, optional = true }
+# futures-executor = { workspace = true, optional = true }
