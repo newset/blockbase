@@ -4,7 +4,7 @@ package main
 // #include <errno.h>
 import "C"
 import (
-	"go-demo/core/trx"
+	"blockbase/core/trx"
 )
 
 //export SignTron
