@@ -1,24 +1,28 @@
-IOS_OUT=../ios/lib
-GO_SDK_FILE=./lib.go
+IOS_OUT=./target/ios
+SDK_NAME=WalletSDK
+SDK_VERSION=1.0.0
+PKG_NAME=./lib.go
 
 ios-arm64:
 	CGO_ENABLED=1 \
 	GOOS=darwin \
 	GOARCH=arm64 \
 	SDK=iphoneos \
+	CC=$(PWD)/clangwrap.sh \
 	CGO_CFLAGS="-fembed-bitcode" \
-	go build -buildmode=c-archive -tags ios -o $(IOS_OUT)/arm64.a $(GO_SDK_FILE)
+	go build -buildmode=c-archive -tags ios -o $(IOS_OUT)/arm64/$(SDK_NAME).a $(PKG_NAME)
 
 ios-x86_64:
 	CGO_ENABLED=1 \
 	GOOS=darwin \
 	GOARCH=amd64 \
 	SDK=iphonesimulator \
-	go build -buildmode=c-archive -tags ios -o $(IOS_OUT)/x86_64.a $(GO_SDK_FILE)
+	CC=$(PWD)/clangwrap.sh \
+	go build -buildmode=c-archive -tags ios -o $(IOS_OUT)/x86_64/$(SDK_NAME).a $(PKG_NAME)
 
 ios: ios-arm64 ios-x86_64
-	lipo $(IOS_OUT)/x86_64.a $(IOS_OUT)/arm64.a -create -output $(IOS_OUT)/WalletSDK.a
-	cp $(IOS_OUT)/arm64.h $(IOS_OUT)/WalletSDK.h
+	lipo $(IOS_OUT)/x86_64/$(SDK_NAME).a $(IOS_OUT)/arm64/$(SDK_NAME).a -create -output $(IOS_OUT)/$(SDK_NAME).a
+	cp $(IOS_OUT)/arm64/$(SDK_NAME).h $(IOS_OUT)/$(SDK_NAME).h
 
 
 ANDROID_OUT=../android/app/src/main/jniLibs
