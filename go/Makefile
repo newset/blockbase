@@ -25,9 +25,10 @@ ios: ios-arm64 ios-x86_64
 	cp $(IOS_OUT)/arm64/$(SDK_NAME).h $(IOS_OUT)/$(SDK_NAME).h
 
 
-ANDROID_OUT=../android/app/src/main/jniLibs
+ANDROID_OUT=../android/libs
 ANDROID_SDK=$(HOME)/Library/Android/sdk
-NDK_BIN=$(ANDROID_SDK)/ndk/21.0.6113669/toolchains/llvm/prebuilt/darwin-x86_64/bin
+ANDROID_SDK_NAME=walletbase
+NDK_BIN=$(ANDROID_SDK)/ndk/22.0.7026061/toolchains/llvm/prebuilt/darwin-x86_64/bin
 
 android-armv7a:
 	CGO_ENABLED=1 \
@@ -35,27 +36,29 @@ android-armv7a:
 	GOARCH=arm \
 	GOARM=7 \
 	CC=$(NDK_BIN)/armv7a-linux-androideabi21-clang \
-	go build -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/libfoo.so ./cmd/libfoo
+	go build -buildmode=c-shared -o $(ANDROID_OUT)/armeabi-v7a/$(ANDROID_SDK_NAME).so $(PKG_NAME)
 
 android-arm64:
 	CGO_ENABLED=1 \
 	GOOS=android \
 	GOARCH=arm64 \
 	CC=$(NDK_BIN)/aarch64-linux-android21-clang \
-	go build -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/libfoo.so ./cmd/libfoo
+	go build -buildmode=c-shared -o $(ANDROID_OUT)/arm64-v8a/$(ANDROID_SDK_NAME).so $(PKG_NAME)
 
 android-x86:
 	CGO_ENABLED=1 \
 	GOOS=android \
 	GOARCH=386 \
 	CC=$(NDK_BIN)/i686-linux-android21-clang \
-	go build -buildmode=c-shared -o $(ANDROID_OUT)/x86/libfoo.so ./cmd/libfoo
+	go build -buildmode=c-shared -o $(ANDROID_OUT)/x86/$(ANDROID_SDK_NAME).so $(PKG_NAME)
 
 android-x86_64:
 	CGO_ENABLED=1 \
 	GOOS=android \
 	GOARCH=amd64 \
 	CC=$(NDK_BIN)/x86_64-linux-android21-clang \
-	go build -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/libfoo.so ./cmd/libfoo
+	go build -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/$(ANDROID_SDK_NAME).so $(PKG_NAME)
 
 android: android-armv7a android-arm64 android-x86 android-x86_64
+
+all: ios android
