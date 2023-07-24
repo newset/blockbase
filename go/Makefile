@@ -1,7 +1,11 @@
 IOS_OUT=./target/ios
-SDK_NAME=WalletSDK
+SDK_NAME=libWalletSDK
 SDK_VERSION=1.0.0
 PKG_NAME=./lib.go
+
+clean:
+	@echo "❌ cleaning up..."
+	rm -rf ../android/libs/**
 
 ios-arm64:
 	CGO_ENABLED=1 \
@@ -23,6 +27,7 @@ ios-x86_64:
 ios: ios-arm64 ios-x86_64
 	lipo $(IOS_OUT)/x86_64/$(SDK_NAME).a $(IOS_OUT)/arm64/$(SDK_NAME).a -create -output $(IOS_OUT)/$(SDK_NAME).a
 	cp $(IOS_OUT)/arm64/$(SDK_NAME).h $(IOS_OUT)/$(SDK_NAME).h
+
 
 
 ANDROID_OUT=../android/libs
@@ -59,6 +64,6 @@ android-x86_64:
 	CC=$(NDK_BIN)/x86_64-linux-android21-clang \
 	go build -buildmode=c-shared -o $(ANDROID_OUT)/x86_64/$(ANDROID_SDK_NAME).so $(PKG_NAME)
 
-android: android-armv7a android-arm64 android-x86 android-x86_64
+android: clean android-armv7a android-arm64 android-x86 android-x86_64
 
 all: ios android
