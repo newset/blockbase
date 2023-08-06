@@ -26,9 +26,9 @@ ios-x86_64:
 
 ios: ios-arm64 ios-x86_64
 	lipo $(IOS_OUT)/x86_64/$(SDK_NAME).a $(IOS_OUT)/arm64/$(SDK_NAME).a -create -output $(IOS_OUT)/$(SDK_NAME).a
-	cp $(IOS_OUT)/arm64/$(SDK_NAME).h $(IOS_OUT)/$(SDK_NAME).h
-
-
+	cp $(IOS_OUT)/arm64/$(SDK_NAME).h ../ios/Classes/bindings.h
+	cp $(IOS_OUT)/$(SDK_NAME).a ../ios/Frameworks/$(SDK_NAME).a
+	sed '/^extern/!d' < $(IOS_OUT)/x86_64/$(SDK_NAME).h | sed '1d' > ../ios/Classes/bindings.h
 
 ANDROID_OUT=../android/libs
 ANDROID_SDK=$(HOME)/Library/Android/sdk
