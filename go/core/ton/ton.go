@@ -1,7 +1,6 @@
 package ton
 
 import (
-	"blockbase/core"
 	"context"
 	"fmt"
 	"log"
@@ -11,21 +10,22 @@ import (
 	"github.com/xssnick/tonutils-go/liteclient"
 	"github.com/xssnick/tonutils-go/ton"
 	"github.com/xssnick/tonutils-go/ton/jetton"
+	"github.com/xssnick/tonutils-go/ton/nft"
 	"github.com/xssnick/tonutils-go/ton/wallet"
 )
 
 var (
-	testnet = "https://ton.org/testnet-global.config.json"
 	// mainnet = "https://ton-blockchain.github.io/global.config.json"
-	mainnet = "https://ton.org/global-config.json"
+	TestnetURL = "https://ton.org/testnet-global.config.json"
+	MainnetURL = "https://ton.org/global-config.json"
+	CurrentNet = Testnet
 )
 
 type TonAccount struct {
-	Wallet     *wallet.Wallet
-	Secret     string
-	Blockchain *core.Blockchain
-	api        *ton.APIClient
-	ctx        context.Context
+	Wallet  *wallet.Wallet
+	Secret  string
+	Address string
+	api     *ton.APIClient
 }
 
 func Ternary[T any](condition bool, If, Else T) T {
@@ -50,14 +50,20 @@ func setupClient(rpc string) (*ton.APIClient, context.Context) {
 	return api, ctx
 }
 
+func CreateAcccoun(secret string, version int) {
+
+	address, err := TonutilsFromSeed(secret, wallet.V4R2)
+	fmt.Println("address:", address, err)
+}
+
 // NewTonAccount creates a new ton account
 // secret: 12 words mnemonic
 // dev: testnet or mainnet
-func NewTonAccount(secret string, dev bool) *TonAccount {
-	serverUrL := Ternary(dev, testnet, mainnet)
+func NewTonAccount(secret string, ver wallet.Version, dev bool) *TonAccount {
+	serverUrL := Ternary(dev, TestnetURL, MainnetURL)
 	api, _ := setupClient(serverUrL)
 	words := strings.Split(secret, " ")
-	w, err := wallet.FromSeed(api, words, wallet.V4R2)
+	w, err := wallet.FromSeed(api, words, ver)
 
 	if err != nil {
 		log.Fatalln("FromSeed err:", err.Error())
@@ -69,19 +75,15 @@ func NewTonAccount(secret string, dev bool) *TonAccount {
 	return &TonAccount{
 		Wallet: w,
 		Secret: secret,
-		ctx:    context.Background(),
 		api:    api,
-		Blockchain: &core.Blockchain{
-			Rpc:     serverUrL,
-			Testnet: dev,
-		},
 	}
 }
 
 func (account *TonAccount) GetBalance() string {
 	api := account.api
-	ctx := account.ctx
 	w := account.Wallet
+	ctx := context.Background()
+
 	block, err := api.CurrentMasterchainInfo(ctx)
 	if err != nil {
 		log.Fatalln("CurrentMasterchainInfo err:", err.Error())
@@ -94,21 +96,31 @@ func (account *TonAccount) GetBalance() string {
 		return ""
 	}
 
-	fmt.Println("balance:", balance)
-
 	return balance.String()
 }
 
 func (account *TonAccount) GetTokenBalance(token string) string {
 	tokenContract := address.MustParseAddr(token)
 	master := jetton.NewJettonMasterClient(account.api, tokenContract)
+	ctx := context.Background()
 
-	tokenWallet, err := master.GetJettonWallet(account.ctx, account.Wallet.Address())
+	tokenWallet, err := master.GetJettonWallet(ctx, account.Wallet.Address())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tokenBalance, err := tokenWallet.GetBalance(account.ctx)
+	data, _ := master.GetJettonData(ctx)
+	content := data.Content.(*nft.ContentSemichain)
+	log.Println("data:", content)
+	log.Println("	symbol:", content.GetAttribute("symbol"))
+
+	if content.GetAttribute("decimals") != "" {
+		log.Println("	decimals:", content.GetAttribute("decimals"))
+	} else {
+		log.Println("	decimals:", 9)
+	}
+
+	tokenBalance, err := tokenWallet.GetBalance(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -118,21 +130,21 @@ func (account *TonAccount) GetTokenBalance(token string) string {
 	return tokenBalance.String()
 }
 
-func (account *TonAccount) TransferToken(token string, receiver string, amount float32, memo string) string {
+func (account *TonAccount) TransferToken(token string, receiver string, amount float32, memo string) {
 	tokenContract := address.MustParseAddr(token)
 	master := jetton.NewJettonMasterClient(account.api, tokenContract)
+	ctx := context.Background()
 
-	tokenWallet, err := master.GetJettonWallet(account.ctx, account.Wallet.Address())
+	tokenWallet, err := master.GetJettonWallet(ctx, account.Wallet.Address())
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	tokenBalance, err := tokenWallet.GetBalance(account.ctx)
+	tokenBalance, err := tokenWallet.GetBalance(ctx)
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Println("token balance:", tokenBalance.String())
 
-	return ""
 }
