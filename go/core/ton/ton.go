@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/xssnick/tonutils-go/address"
 	"github.com/xssnick/tonutils-go/liteclient"
+	"github.com/xssnick/tonutils-go/tlb"
 	"github.com/xssnick/tonutils-go/ton"
 	"github.com/xssnick/tonutils-go/ton/jetton"
 	"github.com/xssnick/tonutils-go/ton/nft"
@@ -35,20 +37,19 @@ func Ternary[T any](condition bool, If, Else T) T {
 	return Else
 }
 
-func setupClient(rpc string) (*ton.APIClient, context.Context) {
+var api = func() *ton.APIClient {
 	client := liteclient.NewConnectionPool()
-	err := client.AddConnectionsFromConfigUrl(context.Background(), rpc)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	err := client.AddConnectionsFromConfigUrl(ctx, "https://ton-blockchain.github.io/testnet-global.config.json")
 	if err != nil {
 		panic(err)
 	}
 
-	ctx := client.StickyContext(context.Background())
-
-	// initialize ton api lite connection wrapper
-	api := ton.NewAPIClient(client)
-
-	return api, ctx
-}
+	return ton.NewAPIClient(client)
+}()
 
 func CreateAcccoun(secret string, version int) {
 
@@ -60,20 +61,20 @@ func CreateAcccoun(secret string, version int) {
 // secret: 12 words mnemonic
 // dev: testnet or mainnet
 func NewTonAccount(secret string, ver wallet.Version, dev bool) *TonAccount {
-	serverUrL := Ternary(dev, TestnetURL, MainnetURL)
-	api, _ := setupClient(serverUrL)
+	// serverUrL := Ternary(dev, TestnetURL, MainnetURL)
+
 	words := strings.Split(secret, " ")
-	w, err := wallet.FromSeed(api, words, ver)
+	_wallet, err := wallet.FromSeed(api, words, ver)
 
 	if err != nil {
 		log.Fatalln("FromSeed err:", err.Error())
 		return nil
 	}
 
-	log.Println("wallet address:", w.Address())
+	log.Println("wallet address:", _wallet.Address())
 
 	return &TonAccount{
-		Wallet: w,
+		Wallet: _wallet,
 		Secret: secret,
 		api:    api,
 	}
@@ -130,12 +131,17 @@ func (account *TonAccount) GetTokenBalance(token string) string {
 	return tokenBalance.String()
 }
 
-func (account *TonAccount) TransferToken(token string, receiver string, amount float32, memo string) {
-	tokenContract := address.MustParseAddr(token)
-	master := jetton.NewJettonMasterClient(account.api, tokenContract)
-	ctx := context.Background()
+func TransferToken(token string, receiver string) {
+	ctx := api.Client().StickyContext(context.Background())
+	w, _ := wallet.FromSeed(api, strings.Split(CurrentSecret, " "), wallet.V4R2)
+	log.Println("test wallet:", w.Address().String())
 
-	tokenWallet, err := master.GetJettonWallet(ctx, account.Wallet.Address())
+	// initialize ton api lite connection wrapper
+	master := jetton.NewJettonMasterClient(api, address.MustParseAddr(token))
+
+	receiverAddress := address.MustParseAddr(receiver)
+
+	tokenWallet, err := master.GetJettonWallet(ctx, w.Address())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -147,4 +153,24 @@ func (account *TonAccount) TransferToken(token string, receiver string, amount f
 
 	log.Println("token balance:", tokenBalance.String())
 
+	amt := tlb.MustFromTON("12")
+	transferPayload, err := tokenWallet.BuildTransferPayload(receiverAddress, amt, tlb.MustFromTON("0.5"), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	msg := wallet.SimpleMessage(tokenWallet.Address(), tlb.MustFromTON("0.5"), transferPayload)
+
+	// w.Transfer()
+	err = w.Send(context.Background(), msg, true)
+
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("waiting for confirmation")
+	_, block, err := w.SendWaitTransaction(ctx, msg)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("transfer tokn finished", block)
 }
