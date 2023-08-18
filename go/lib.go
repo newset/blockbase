@@ -1,5 +1,9 @@
 package main
 
+// #include <stdio.h>
+// #include <errno.h>
+// int addNums(int *nums);
+// double getDouble(double d, _Bool *ok);
 import "C"
 
 import "blockbase/core/trx"
